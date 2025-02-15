@@ -38,14 +38,21 @@
 
 #define MAX_COMMAND_SIZE 255    // The maximum command-line size
 
-#define MAX_NUM_ARGUMENTS 5     // Mav shell only supports four arguments
+#define MAX_NUM_ARGUMENTS 11     // Mav shell only supports ten arguments
+
+#define MAX_HISTORY_SIZE 15     // The maximum commands stored in history
+
+#define MAX_PID_HISTORY_SIZE 15 // The maximum pids stored in history
 
 int main()
 {
 
   char * command_string = (char*) malloc( MAX_COMMAND_SIZE );
+  char * history[MAX_HISTORY_SIZE] = {};
+  char * pid_history[MAX_PID_HISTORY_SIZE] = {};
+  int history_count = 0, pid_count = 0;
 
-  while( 1 )
+  while ( 1 )
   {
     // Print out the msh prompt
     printf ("msh> ");
@@ -55,7 +62,11 @@ int main()
     // This while command will wait here until the user
     // inputs something since fgets returns NULL when there
     // is no input
-    while( !fgets (command_string, MAX_COMMAND_SIZE, stdin) );
+    while ( !fgets (command_string, MAX_COMMAND_SIZE, stdin) );
+
+    // Store command in history
+    history[history_count] = strdup(command_string);
+    history_count++;
 
     /* Parse input */
     char *token[MAX_NUM_ARGUMENTS];
@@ -78,21 +89,45 @@ int main()
               (token_count<MAX_NUM_ARGUMENTS))
     {
       token[token_count] = strndup( argument_ptr, MAX_COMMAND_SIZE );
-      if( strlen( token[token_count] ) == 0 )
+      if ( strlen( token[token_count] ) == 0 )
       {
         token[token_count] = NULL;
       }
         token_count++;
     }
 
-    // Now print the tokenized input as a debug check
-    // \TODO Remove this code and replace with your shell functionality
-
+    // Print the tokenized input as a debug check
     int token_index  = 0;
-    for( token_index = 0; token_index < token_count; token_index ++ ) 
+    for ( token_index = 0; token_index < token_count; token_index ++ ) 
     {
-      printf("token[%d] = %s\n", token_index, token[token_index] );  
+      printf( "token[%d] = %s\n", token_index, token[token_index] );
     }
+    
+    // If no command entered, repeat loop until proper input is detected
+    if ( token[0] == NULL) continue;
+
+    // Check if command is to exit or quit, then free memory and exit
+    if ( strcmp(token[0], "exit" ) == 0 || strcmp( token[0], "quit" ) == 0 ) 
+    {
+      printf( "Exiting msh...\n" );
+      free( command_string );
+      exit( 0 );
+    }
+
+    // TODO: Implement "cd" command (must use chdir in the parent process)
+        
+    // TODO: Implement "mkdir" command using mkdir() system call
+        
+    // TODO: Implement "rm" command using unlink() system call
+        
+    // TODO: Implement "ls" command using fork() and execvp()
+        
+    // TODO: Implement "pidhistory" command to display last 15 process IDs
+        
+    // TODO: Implement "history" command to display last 15 user commands
+        
+    // TODO: Implement "!n" to execute nth command from history
+
 
     free( head_ptr );
 

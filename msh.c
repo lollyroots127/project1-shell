@@ -47,26 +47,34 @@
 int main()
 {
 
-  char * command_string = (char*) malloc( MAX_COMMAND_SIZE );
-  char * history[MAX_HISTORY_SIZE] = {};
-  char * pid_history[MAX_PID_HISTORY_SIZE] = {};
+  char *command_string = (char*)malloc(MAX_COMMAND_SIZE);
+  char *history[MAX_HISTORY_SIZE] = {NULL};
+  pid_t pid_history[MAX_PID_HISTORY_SIZE] = {};
   int history_count = 0, pid_count = 0;
 
-  while ( 1 )
-  {
+  while (1) {
     // Print out the msh prompt
-    printf ("msh> ");
+    printf("msh> ");
 
     // Read the command from the commandline.  The
     // maximum command that will be read is MAX_COMMAND_SIZE
     // This while command will wait here until the user
     // inputs something since fgets returns NULL when there
     // is no input
-    while ( !fgets (command_string, MAX_COMMAND_SIZE, stdin) );
+    while (!fgets(command_string, MAX_COMMAND_SIZE, stdin));
 
     // Store command in history
-    history[history_count] = strdup(command_string);
-    history_count++;
+    if (history_count < 15) {
+      history[history_count] = strdup(command_string);
+      history_count++;
+    } else {
+      free(history[0]);
+      for (int i = 1; i < MAX_HISTORY_SIZE; i++) {
+        history[i - 1] = history[i];
+      }
+      history[MAX_HISTORY_SIZE - 1] = strdup(command_string);
+    }
+    
 
     /* Parse input */
     char *token[MAX_NUM_ARGUMENTS];
@@ -77,7 +85,7 @@ int main()
     // parsed by strsep
     char *argument_ptr;                                         
                                                            
-    char *working_string  = strdup( command_string );                
+    char *working_string  = strdup(command_string);                
 
     // we are going to move the working_string pointer so
     // keep track of its original value so we can deallocate
@@ -85,12 +93,10 @@ int main()
     char *head_ptr = working_string;
 
     // Tokenize the input strings with whitespace used as the delimiter
-    while ( ( (argument_ptr = strsep(&working_string, WHITESPACE ) ) != NULL) && 
-              (token_count<MAX_NUM_ARGUMENTS))
-    {
-      token[token_count] = strndup( argument_ptr, MAX_COMMAND_SIZE );
-      if ( strlen( token[token_count] ) == 0 )
-      {
+    while (((argument_ptr = strsep(&working_string, WHITESPACE)) != NULL) && 
+              (token_count<MAX_NUM_ARGUMENTS) ) {
+      token[token_count] = strndup(argument_ptr, MAX_COMMAND_SIZE);
+      if (strlen(token[token_count]) == 0) {
         token[token_count] = NULL;
       }
         token_count++;
@@ -98,36 +104,57 @@ int main()
 
     // Print the tokenized input as a debug check
     int token_index  = 0;
-    for ( token_index = 0; token_index < token_count; token_index ++ ) 
-    {
-      printf( "token[%d] = %s\n", token_index, token[token_index] );
+    for (token_index = 0; token_index < token_count; token_index++) {
+      printf("token[%d] = %s\n", token_index, token[token_index]);
     }
-    
+
     // If no command entered, repeat loop until proper input is detected
-    if ( token[0] == NULL) continue;
+    if (token[0] == NULL) continue;
 
     // Check if command is to exit or quit, then free memory and exit
-    if ( strcmp(token[0], "exit" ) == 0 || strcmp( token[0], "quit" ) == 0 ) 
-    {
-      printf( "Exiting msh...\n" );
-      free( command_string );
-      exit( 0 );
+    if (strcmp(token[0], "exit") == 0 || strcmp(token[0], "quit") == 0) {
+      printf("Exiting msh...\n");
+      free(command_string);
+      for (int i = 0; i < history_count; i++) {
+        free(history[i]);
+      }
+      exit(0);
     }
 
-    // TODO: Implement "cd" command (must use chdir in the parent process)
-        
-    // TODO: Implement "mkdir" command using mkdir() system call
-        
-    // TODO: Implement "rm" command using unlink() system call
-        
-    // TODO: Implement "ls" command using fork() and execvp()
-        
+    // TODO: Implement "cd" command
+    if (strcmp(token[0], "cd") == 0) {
+      if (token[1] == NULL) {
+          printf("cd: no directory provided\n");
+      } 
+      else {
+          if (chdir(token[1]) != 0) {
+              perror("cd failed");
+          }
+      }
+      continue;
+    }
+
     // TODO: Implement "pidhistory" command to display last 15 process IDs
         
     // TODO: Implement "history" command to display last 15 user commands
         
     // TODO: Implement "!n" to execute nth command from history
 
+    // TODO: Implement command execution
+    pid_t pid = fork( );
+    if( pid == 0 )
+    {
+      int ret = execvp( token[0], &token[0] );  
+      if( ret == -1 )
+      {
+        perror( "execvp failed: " );
+      }
+    }
+    else 
+    {
+      int status;
+      wait( & status );
+    }
 
     free( head_ptr );
 

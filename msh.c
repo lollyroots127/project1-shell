@@ -1,5 +1,4 @@
 /*
-
   Name: Laura Roots
   ID:   1001637158
 */
@@ -158,6 +157,7 @@ int main()
       int ret = execvp(token[0], &token[0]);  
       if (ret == -1) {
         printf("%s: Command not found.\n", token[0]);
+        exit(1);
       }
     } else if (pid == -1) {
       perror("fork failed");

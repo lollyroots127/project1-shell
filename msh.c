@@ -50,6 +50,20 @@ int main()
     // If no command entered, repeat loop until proper input is detected
     if (command_string[0] == '\n') continue;
 
+    // If the user enters the "!n" command, verify that it is an available command and then
+    // Overwrite the command string and continue with execution.
+    // Note: since the "!n" command deals with history, it is implemented before history is saved.
+    // History will now contain the copied and executed command rather than !n.
+    if (command_string[0] == '!') {
+      int n = atoi(&command_string[1]);
+      if (n < 0 || n >= history_count) {
+        printf("Command not in history.\n");
+        continue;
+      } else {
+        strcpy(command_string, history[n]);
+      }
+    }
+
     // Store the current command in history
     // Do this before evaluating commands to ensure they are stored, including invalid commands
     // Empty commands are not stored
@@ -64,20 +78,6 @@ int main()
         history[i - 1] = history[i];
       }
       history[MAX_HISTORY_SIZE - 1] = strdup(command_string);
-    }
-
-    // If the user enters the "!n" command, verify that it is an available command and then
-    // Overwrite the command string and continue with execution.
-    // Note: since the "!n" command is stored in history before execution, 
-    // it will be the most recent command
-    if (command_string[0] == '!') {
-      int n = atoi(&command_string[1]);
-      if (n < 0 || n >= history_count) {
-        printf("Command not in history.\n");
-        continue;
-      } else {
-        strcpy(command_string, history[n]);
-      }
     }
     
     /* Parse input */
